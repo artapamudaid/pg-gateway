@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Gateway Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <div v-if="!isLoggedIn" class="login-container">
+            <div class="glass-card login-card">
+                <div class="glow-bg"></div>
+                <h2>Gateway Access</h2>
+                <p>Silakan masuk ke dashboard</p>
+                <form @submit.prevent="login">
+                    <div class="input-group">
+                        <label>Username</label>
+                        <input type="text" v-model="loginData.username" required placeholder="admin" />
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" v-model="loginData.password" required placeholder="••••••••" />
+                    </div>
+                    <div v-if="loginError" class="error-msg">{{ loginError }}</div>
+                    <button type="submit" class="btn-primary" :disabled="loading">
+                        <span v-if="loading">Loading...</span>
+                        <span v-else>Login</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div v-else class="dashboard-layout">
+            <aside class="sidebar glass-card">
+                <div class="brand">
+                    <h2>Multi-Pay</h2>
+                    <span class="badge">Gateway</span>
+                </div>
+                <nav>
+                    <a href="#" class="nav-item active">Destinations</a>
+                </nav>
+                <div class="sidebar-footer">
+                    <button @click="logout" class="btn-logout">Log Out</button>
+                </div>
+            </aside>
+            <main class="main-content">
+                <header class="header">
+                    <h1>Routing Destinations</h1>
+                    <button class="btn-primary" @click="showAddModal = true">+ Tambah Baru</button>
+                </header>
+
+                <div class="content-wrapper">
+                    <div v-if="loadingDestinations" class="loading">Memuat data...</div>
+                    <div v-else class="grid">
+                        <div v-for="dest in destinations" :key="dest.ID" class="glass-card dest-card">
+                            <div class="dest-header">
+                                <h3>{{ dest.AppName }}</h3>
+                                <span class="routing-badge">{{ dest.RoutingCode }}</span>
+                            </div>
+                            <div class="dest-body">
+                                <p><strong>Target URL:</strong> <br>{{ dest.TargetURL }}</p>
+                                <p><strong>Secret Token:</strong> <span class="blurred">{{ dest.SecretToken }}</span></p>
+                                <p><strong>Provider Token:</strong> <span class="blurred">{{ dest.ProviderToken }}</span></p>
+                            </div>
+                            <div class="dest-footer">
+                                <button class="btn-icon" @click="editDest(dest)">Edit</button>
+                                <button class="btn-icon text-danger" @click="deleteDest(dest.ID)">Hapus</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Modal Form -->
+        <div v-if="showAddModal" class="modal-backdrop">
+            <div class="glass-card modal-card">
+                <h3>{{ isEdit ? 'Edit Destination' : 'Tambah Destination' }}</h3>
+                <form @submit.prevent="saveDestination">
+                    <div class="input-group">
+                        <label>App Name</label>
+                        <input type="text" v-model="formData.AppName" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Routing Code</label>
+                        <input type="text" v-model="formData.RoutingCode" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Target URL</label>
+                        <input type="url" v-model="formData.TargetURL" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Secret Token (Untuk Target)</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" v-model="formData.SecretToken" required style="flex: 1;" />
+                            <button type="button" class="btn-secondary" style="width: auto; padding: 0 16px;" @click="generateSecret">Generate</button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Provider Token (Dari Midtrans/Flip)</label>
+                        <input type="text" v-model="formData.ProviderToken" required />
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" @click="closeModal">Batal</button>
+                        <button type="submit" class="btn-primary" :disabled="loading">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="/app.js"></script>
+</body>
+</html>

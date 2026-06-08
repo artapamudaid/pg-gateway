@@ -1,0 +1,19 @@
+# Folder dependencies (agar build dari awal)
+vendor/
+node_modules/
+
+# OS-specific
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# File sisa build / testing Go
+*.test
+*.out
+*.exe
+*.log
+
+# File environment lokal jangan dimasukkan ke image production
+.env
