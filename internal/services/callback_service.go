@@ -120,3 +120,41 @@ func forwardRequest(refID string, dest models.Destination, payload []byte) {
 	logRepo := repositories.NewLogRepository()
 	logRepo.Create(&logEntry)
 }
+
+// ForwardSync melakukan HTTP POST secara sinkron (tanpa retry) dan mengembalikan respons ke pemanggil
+func ForwardSync(refID string, dest models.Destination, payload []byte) (int, []byte, error) {
+	req, err := http.NewRequest("POST", dest.TargetURL, bytes.NewBuffer(payload))
+	if err != nil {
+		return 0, nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-Gateway-Auth", dest.SecretToken)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer resp.Body.Close()
+
+	var bodyBytes []byte
+	// Fallback membaca body dengan buffer standar
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(resp.Body)
+	bodyBytes = buf.Bytes()
+
+	// Simpan Log Audit
+	logEntry := models.CallbackLog{
+		ReferenceID: refID,
+		RoutingCode: dest.RoutingCode,
+		TargetURL:   dest.TargetURL,
+		Payload:     string(payload),
+		StatusCode:  resp.StatusCode,
+	}
+	logRepo := repositories.NewLogRepository()
+	logRepo.Create(&logEntry)
+
+	return resp.StatusCode, bodyBytes, nil
+}
+

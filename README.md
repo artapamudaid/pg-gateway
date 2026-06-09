@@ -100,26 +100,36 @@ Aplikasi Anda wajib memvalidasi header `X-Gateway-Auth` (sesuai `SecretToken` ya
 **1. PHP (Native)**
 ```php
 <?php
-// Menerima Header X-Gateway-Auth
+// 1. Validasi request berasal dari Gateway (menggantikan validasi token Flip langsung)
 $headers = getallheaders();
 $gatewayAuth = isset($headers['X-Gateway-Auth']) ? $headers['X-Gateway-Auth'] : '';
 
-// Validasi Token Rahasia
 if ($gatewayAuth !== 'secret_token_dari_dashboard') {
     http_response_code(401);
-    echo "Unauthorized";
+    echo json_encode(['is_correct' => false, 'message' => 'Unauthorized Gateway']);
     exit;
 }
 
-// Mengambil raw payload yang diteruskan oleh Gateway
-$rawPayload = file_get_contents('php://input');
+// 2. Mengambil raw payload yang diteruskan oleh Gateway
+$raw = file_get_contents('php://input');
+parse_str($raw, $input);
 
-// Payload ini akan sama persis dengan yang dikirimkan oleh Flip/Midtrans
-// Lakukan proses update transaksi di database Anda berdasarkan payload tersebut...
+$payload = isset($input['data']) ? $input['data'] : null;
 
-// Wajib merespon 200 OK secepatnya agar Gateway berhenti melakukan Auto-Retry
+// Parse data JSON dari Flip
+$data = json_decode($payload, true);
+
+if (!$data || !isset($data['reference_id'])) {
+    http_response_code(400);
+    echo json_encode(['is_correct' => false, 'message' => 'Invalid payload']);
+    exit;
+}
+
+// Lakukan proses update transaksi di database Anda berdasarkan variabel $data...
+
+// 3. Wajib merespon 200 OK secepatnya agar Gateway berhenti melakukan Auto-Retry
 http_response_code(200);
-echo "OK";
+echo json_encode(['is_correct' => true, 'message' => 'Success']);
 ?>
 ```
 

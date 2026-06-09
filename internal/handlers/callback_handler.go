@@ -76,12 +76,13 @@ func HandleCallback(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized Token")
 	}
 
-	// Sesuai standar: Respon 200 secepatnya agar tidak timeout
-	// Kita masukkan ke dalam Job Queue (Go Channel) untuk diproses oleh Worker Pool
-	services.JobQueue <- services.CallbackJob{
-		ReferenceID: refID,
-		Payload:     payload,
+	// Meneruskan request secara sinkron ke aplikasi tujuan
+	statusCode, bodyBytes, err := services.ForwardSync(refID, dest, payload)
+	if err != nil {
+		return c.Status(fiber.StatusBadGateway).SendString("Gateway Error: Failed to reach destination")
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	// Meneruskan respons (status code dan JSON) dari aplikasi tujuan kembali ke Flip
+	c.Set("Content-Type", "application/json")
+	return c.Status(statusCode).Send(bodyBytes)
 }
