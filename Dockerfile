@@ -31,6 +31,9 @@ WORKDIR /root/
 # Copy binary 'payment-gateway' dari tahap builder sebelumnya
 COPY --from=builder /app/payment-gateway .
 
+# Copy folder frontend agar bisa diakses oleh Fiber app.Static
+COPY --from=builder /app/frontend ./frontend
+
 # Terapkan GOMEMLIMIT untuk menjamin batasan memori (misal 250MB) 
 # agar aplikasi tidak mengonsumsi RAM berlebih secara mendadak.
 ENV GOMEMLIMIT=250MiB
