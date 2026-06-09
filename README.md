@@ -12,7 +12,7 @@ Flip Smart Gateway adalah gateway HTTP berkinerja tinggi yang dirancang untuk me
 
 ## Tech Stack
 
-- **Bahasa**: Go 1.21+
+- **Bahasa**: Go 1.25+
 - **Framework Web**: [Fiber v2](https://gofiber.io/)
 - **Database ORM**: [GORM](https://gorm.io/) (PostgreSQL & SQLite in-memory untuk testing)
 - **Retry Logic**: `github.com/avast/retry-go/v4`
@@ -29,7 +29,7 @@ cp .env.example .env
 
 Pastikan Anda memasukkan detail koneksi database dan kredensial Token rahasia Flip:
 ```dotenv
-APP_PORT=:3000
+APP_PORT=:3131
 DB_DSN=host=localhost user=postgres password=rahasia dbname=flip_gateway port=5432 sslmode=disable TimeZone=Asia/Jakarta
 JWT_SECRET=super_secret_key_industri
 FLIP_GLOBAL_TOKEN=token_rahasia_dari_flip
@@ -55,8 +55,8 @@ Untuk menjalankan aplikasi ini menggunakan container Docker yang terisolasi dan 
 # Build Docker image
 docker build -t payment-gateway:latest .
 
-# Run Docker container (parsing variabel dari file .env)
-docker run -d --name payment-gateway-app -p 3000:3000 --env-file .env payment-gateway:latest
+# Run Docker container (dengan host network agar bisa terhubung ke database local, baca variabel dari .env)
+docker run -d --name payment-gateway-app --env-file .env --network="host" payment-gateway:latest
 ```
 
 ## Pengujian (Testing)
