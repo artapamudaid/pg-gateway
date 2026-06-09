@@ -1,14 +1,14 @@
-# Flip Smart Gateway
+# Payment Gateway Smart Gateway
 
-Flip Smart Gateway adalah gateway HTTP berkinerja tinggi yang dirancang untuk menerima webhook/callback dari Flip dan meneruskannya (forwarding) secara andal ke berbagai layanan internal tujuan (destination) berdasarkan konfigurasi *routing*.
+Payment Gateway Smart Gateway adalah gateway HTTP berkinerja tinggi yang dirancang untuk menerima webhook/callback dari Payment Gateway dan meneruskannya (forwarding) secara andal ke berbagai layanan internal tujuan (destination) berdasarkan konfigurasi _routing_.
 
 ## Fitur Utama
 
 - **High-Throughput Callback Handling**: Dibangun dengan Go dan Fiber untuk konkurensi maksimal dengan latensi rendah.
-- **Worker Pool & Job Queue**: Menggunakan Go Channel secara bawaan untuk menampung lonjakan traffic callback mendadak tanpa menyebabkan *Out of Memory* (OOM).
-- **Auto-Retry Mechanism**: Secara otomatis mengulang (retry) pengiriman data ke URL Tujuan (Target URL) dengan pola *exponential backoff* jika server target sedang mati.
+- **Worker Pool & Job Queue**: Menggunakan Go Channel secara bawaan untuk menampung lonjakan traffic callback mendadak tanpa menyebabkan _Out of Memory_ (OOM).
+- **Auto-Retry Mechanism**: Secara otomatis mengulang (retry) pengiriman data ke URL Tujuan (Target URL) dengan pola _exponential backoff_ jika server target sedang mati.
 - **Database Connection Pooling**: Mencegah putusnya koneksi database (PostgreSQL) saat server menerima ribuan hit mendadak.
-- **Docker-Ready**: Dilengkapi dengan arsitektur *Multi-stage Build* Dockerfile (berbasis Alpine) yang menghasilkan file binary statis berukuran sangat kecil (~20MB).
+- **Docker-Ready**: Dilengkapi dengan arsitektur _Multi-stage Build_ Dockerfile (berbasis Alpine) yang menghasilkan file binary statis berukuran sangat kecil (~20MB).
 
 ## Tech Stack
 
@@ -27,12 +27,12 @@ Buat atau ubah file konfigurasi environment dari file contoh (`.env.example`):
 cp .env.example .env
 ```
 
-Pastikan Anda memasukkan detail koneksi database dan kredensial Token rahasia Flip:
+Pastikan Anda memasukkan detail koneksi database dan kredensial Token rahasia Provider Payment Gateway:
+
 ```dotenv
 APP_PORT=:3131
 DB_DSN=host=localhost user=postgres password=rahasia dbname=flip_gateway port=5432 sslmode=disable TimeZone=Asia/Jakarta
 JWT_SECRET=super_secret_key_industri
-FLIP_GLOBAL_TOKEN=token_rahasia_dari_flip
 ```
 
 ### 2. Menjalankan secara Lokal
