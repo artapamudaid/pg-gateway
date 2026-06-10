@@ -18,6 +18,7 @@ func HandleCallback(c *fiber.Ctx) error {
 	var refID string
 	var payload []byte
 	var tokenRaw string
+	var fallbackTitle string
 
 	switch provider {
 	case "flip":
@@ -43,6 +44,12 @@ func HandleCallback(c *fiber.Ctx) error {
 		} else if val, exists := dataObj["id"]; exists && val != nil && val != "" {
 			refID = fmt.Sprintf("%v", val)
 			ok = true
+		}
+
+		if val, exists := dataObj["bill_title"]; exists && val != nil && val != "" {
+			fallbackTitle = fmt.Sprintf("%v", val)
+		} else if val, exists := dataObj["title"]; exists && val != nil && val != "" {
+			fallbackTitle = fmt.Sprintf("%v", val)
 		}
 
 		if !ok || refID == "" {
@@ -85,13 +92,27 @@ func HandleCallback(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusNotFound).SendString("Destination not found for routing code")
 		}
 	} else {
-		// Fallback untuk testing dari Sandbox Flip: jika tidak ada prefix "-" pada ID
-		// Maka kita otomatis menggunakan konfigurasi target aplikasi pertama yang ada di database
+		// Fallback untuk testing dari Sandbox Flip atau jika Flip tidak mengirim reference_id
+		// Maka kita mencoba mencocokkan bill_title dengan app_name, jika tidak ketemu baru gunakan default
 		dests, errList := destService.GetAll()
 		if errList != nil || len(dests) == 0 {
 			return c.Status(fiber.StatusBadRequest).SendString("Invalid reference_id format and no default destination found in database")
 		}
-		dest = dests[0]
+
+		matched := false
+		if fallbackTitle != "" {
+			for _, d := range dests {
+				if strings.Contains(strings.ToLower(fallbackTitle), strings.ToLower(d.AppName)) {
+					dest = d
+					matched = true
+					break
+				}
+			}
+		}
+
+		if !matched {
+			dest = dests[0]
+		}
 	}
 
 	// Validasi Token sesuai konfigurasi aplikasi di Database
