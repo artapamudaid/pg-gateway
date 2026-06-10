@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 
+	"payment-gateway/internal/models"
 	"payment-gateway/internal/services"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,16 +25,28 @@ func HandleCallback(c *fiber.Ctx) error {
 		tokenRaw = c.FormValue("token")
 		dataRaw := c.FormValue("data")
 
-		// Parsing JSON internal (data) untuk mengambil reference_id
+		// Parsing JSON internal (data)
 		var dataObj map[string]interface{}
 		if err := json.Unmarshal([]byte(dataRaw), &dataObj); err != nil {
 			return c.Status(fiber.StatusBadRequest).SendString("Invalid JSON Payload")
 		}
 
+		// Cari routing prefix dari berbagai field yang mungkin dikirim oleh Flip
+		// Flip biasanya mengirim: bill_link_id, title, reference, atau id
 		var ok bool
-		refID, ok = dataObj["reference_id"].(string)
+		if val, exists := dataObj["reference_id"]; exists && val != nil && val != "" {
+			refID = fmt.Sprintf("%v", val)
+			ok = true
+		} else if val, exists := dataObj["bill_link_id"]; exists && val != nil && val != "" {
+			refID = fmt.Sprintf("%v", val)
+			ok = true
+		} else if val, exists := dataObj["id"]; exists && val != nil && val != "" {
+			refID = fmt.Sprintf("%v", val)
+			ok = true
+		}
+
 		if !ok || refID == "" {
-			return c.Status(fiber.StatusBadRequest).SendString("reference_id is required")
+			return c.Status(fiber.StatusBadRequest).SendString("Routing identifier (reference_id/bill_link_id/id) is required")
 		}
 		
 		payload = c.Body()
@@ -59,16 +73,25 @@ func HandleCallback(c *fiber.Ctx) error {
 
 	// Ekstrak Routing Code (Misal: "SHOP-INV-001" -> "SHOP")
 	parts := strings.SplitN(refID, "-", 2)
-	if len(parts) < 2 {
-		return c.Status(fiber.StatusBadRequest).SendString("Invalid reference_id format")
-	}
-	routingCode := parts[0]
-
-	// Cari konfigurasi tujuan menggunakan Service
+	
 	destService := services.NewDestinationService()
-	dest, err := destService.GetByRoutingCode(routingCode)
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).SendString("Destination not found")
+	var dest models.Destination
+	var err error
+
+	if len(parts) >= 2 {
+		routingCode := parts[0]
+		dest, err = destService.GetByRoutingCode(routingCode)
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).SendString("Destination not found for routing code")
+		}
+	} else {
+		// Fallback untuk testing dari Sandbox Flip: jika tidak ada prefix "-" pada ID
+		// Maka kita otomatis menggunakan konfigurasi target aplikasi pertama yang ada di database
+		dests, errList := destService.GetAll()
+		if errList != nil || len(dests) == 0 {
+			return c.Status(fiber.StatusBadRequest).SendString("Invalid reference_id format and no default destination found in database")
+		}
+		dest = dests[0]
 	}
 
 	// Validasi Token sesuai konfigurasi aplikasi di Database
