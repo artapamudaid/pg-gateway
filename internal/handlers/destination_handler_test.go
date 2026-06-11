@@ -37,6 +37,7 @@ func TestGetDestinations(t *testing.T) {
 	// 2. Insert dummy data ke dalam SQLite DB in-memory
 	dummyData := models.Destination{
 		AppName:     "Sistem Tagihan",
+		Environment: "production",
 		RoutingCode: "TAGIHAN",
 		TargetURL:   "https://tagihan.example.com",
 		SecretToken: "secret123",
@@ -76,6 +77,7 @@ func TestCreateDestination(t *testing.T) {
 	// 3. Siapkan payload dummy
 	newDest := models.Destination{
 		AppName:     "Aplikasi Baru",
+		Environment: "sandbox",
 		RoutingCode: "APP_NEW",
 		TargetURL:   "https://new.example.com",
 		SecretToken: "supersecret",
@@ -100,4 +102,5 @@ func TestCreateDestination(t *testing.T) {
 	config.DB.First(&savedDest)
 	assert.Equal(t, "Aplikasi Baru", savedDest.AppName)
 	assert.Equal(t, "APP_NEW", savedDest.RoutingCode)
+	assert.Equal(t, "sandbox", savedDest.Environment)
 }

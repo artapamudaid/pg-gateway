@@ -8,12 +8,14 @@ createApp({
         const loginError = ref('')
         const loginData = ref({ username: '', password: '' })
         const destinations = ref([])
+        const currentTab = ref('destinations')
 
         const showAddModal = ref(false)
         const isEdit = ref(false)
         const formData = ref({
             ID: null,
             AppName: '',
+            Environment: 'production',
             RoutingCode: '',
             TargetURL: '',
             SecretToken: '',
@@ -91,6 +93,7 @@ createApp({
             formData.value = {
                 ID: null,
                 AppName: '',
+                Environment: 'production',
                 RoutingCode: '',
                 TargetURL: '',
                 SecretToken: '',
@@ -156,7 +159,7 @@ createApp({
         }
 
         return {
-            isLoggedIn, loading, loadingDestinations, loginError, loginData, destinations,
+            isLoggedIn, loading, loadingDestinations, loginError, loginData, destinations, currentTab,
             showAddModal, isEdit, formData,
             login, logout, editDest, deleteDest, saveDestination, closeModal, generateSecret
         }

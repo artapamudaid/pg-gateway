@@ -42,35 +42,82 @@
                     <span class="badge">Gateway</span>
                 </div>
                 <nav>
-                    <a href="#" class="nav-item active">Destinations</a>
+                    <a href="#" class="nav-item" :class="{ active: currentTab === 'destinations' }" @click="currentTab = 'destinations'">Destinations</a>
+                    <a href="#" class="nav-item" :class="{ active: currentTab === 'docs' }" @click="currentTab = 'docs'">How to Use</a>
                 </nav>
                 <div class="sidebar-footer">
                     <button @click="logout" class="btn-logout">Log Out</button>
                 </div>
             </aside>
             <main class="main-content">
-                <header class="header">
-                    <h1>Routing Destinations</h1>
-                    <button class="btn-primary" @click="showAddModal = true">+ Tambah Baru</button>
-                </header>
+                <div v-if="currentTab === 'destinations'">
+                    <header class="header">
+                        <h1>Routing Destinations</h1>
+                        <button class="btn-primary" @click="showAddModal = true">+ Tambah Baru</button>
+                    </header>
 
-                <div class="content-wrapper">
-                    <div v-if="loadingDestinations" class="loading">Memuat data...</div>
-                    <div v-else class="grid">
-                        <div v-for="dest in destinations" :key="dest.ID" class="glass-card dest-card">
-                            <div class="dest-header">
-                                <h3>{{ dest.AppName }}</h3>
-                                <span class="routing-badge">{{ dest.RoutingCode }}</span>
+                    <div class="content-wrapper">
+                        <div v-if="loadingDestinations" class="loading">Memuat data...</div>
+                        <div v-else class="grid">
+                            <div v-for="dest in destinations" :key="dest.ID" class="glass-card dest-card">
+                                <div class="dest-header">
+                                    <h3>{{ dest.AppName }}</h3>
+                                    <div style="display: flex; gap: 8px;">
+                                        <span class="routing-badge" :style="dest.Environment === 'sandbox' ? 'background: rgba(234, 179, 8, 0.2); color: #eab308; border-color: rgba(234, 179, 8, 0.3);' : ''">{{ dest.Environment }}</span>
+                                        <span class="routing-badge">{{ dest.RoutingCode }}</span>
+                                    </div>
+                                </div>
+                                <div class="dest-body">
+                                    <p><strong>Target URL:</strong> <br>{{ dest.TargetURL }}</p>
+                                    <p><strong>Secret Token:</strong> <span class="blurred">{{ dest.SecretToken }}</span></p>
+                                    <p><strong>Provider Token:</strong> <span class="blurred">{{ dest.ProviderToken }}</span></p>
+                                </div>
+                                <div class="dest-footer">
+                                    <button class="btn-icon" @click="editDest(dest)">Edit</button>
+                                    <button class="btn-icon text-danger" @click="deleteDest(dest.ID)">Hapus</button>
+                                </div>
                             </div>
-                            <div class="dest-body">
-                                <p><strong>Target URL:</strong> <br>{{ dest.TargetURL }}</p>
-                                <p><strong>Secret Token:</strong> <span class="blurred">{{ dest.SecretToken }}</span></p>
-                                <p><strong>Provider Token:</strong> <span class="blurred">{{ dest.ProviderToken }}</span></p>
-                            </div>
-                            <div class="dest-footer">
-                                <button class="btn-icon" @click="editDest(dest)">Edit</button>
-                                <button class="btn-icon text-danger" @click="deleteDest(dest.ID)">Hapus</button>
-                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="currentTab === 'docs'">
+                    <header class="header">
+                        <h1>Cara Penggunaan</h1>
+                    </header>
+                    <div class="content-wrapper">
+                        <div class="glass-card">
+                            <h3>Pengujian (Hit Callback)</h3>
+                            <p style="opacity: 0.8; margin-top: 8px; line-height: 1.5;">Kirimkan request POST ke URL gateway ini untuk diteruskan secara otomatis ke Target URL Anda sesuai dengan Environment dan Routing Code yang terdaftar.</p>
+                            
+                            <hr style="border-color: rgba(255,255,255,0.1); margin: 24px 0;">
+                            
+                            <h4>1. Format URL Gateway</h4>
+                            <ul style="opacity: 0.8; margin-top: 8px; margin-left: 20px; line-height: 1.5;">
+                                <li><strong>Production:</strong> <code>/flip/callback</code> atau <code>/midtrans/callback</code></li>
+                                <li><strong>Sandbox:</strong> <code>/sandbox/flip/callback</code> atau <code>/sandbox/midtrans/callback</code></li>
+                            </ul>
+                            
+                            <h4 style="margin-top: 24px;">2. Contoh Request CURL (Flip)</h4>
+                            <pre style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; overflow-x: auto; color: #a5b4fc; margin-top: 8px; font-family: monospace; font-size: 14px;"><code>curl -X POST http://127.0.0.1:3131/sandbox/flip/callback \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "token=ISI_DENGAN_PROVIDER_TOKEN_ANDA" \
+  -d 'data={"reference_id": "KODE_ROUTING_ANDA-INV-001", "status": "SUCCESS", "amount": 50000}'</code></pre>
+                            
+                            <h4 style="margin-top: 24px;">3. Contoh Request CURL (Midtrans)</h4>
+                            <pre style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; overflow-x: auto; color: #a5b4fc; margin-top: 8px; font-family: monospace; font-size: 14px;"><code>curl -X POST http://127.0.0.1:3131/sandbox/midtrans/callback \
+  -H "Content-Type: application/json" \
+  -H "Authorization: ISI_DENGAN_PROVIDER_TOKEN_ANDA" \
+  -d '{
+    "order_id": "KODE_ROUTING_ANDA-ORD-002",
+    "transaction_status": "settlement",
+    "gross_amount": "100000.00"
+  }'</code></pre>
+
+                            <hr style="border-color: rgba(255,255,255,0.1); margin: 24px 0;">
+                            <p style="color: #fca5a5; font-size: 14px; background: rgba(248, 113, 113, 0.1); padding: 12px; border-radius: 6px;">
+                                <strong>⚠️ Catatan Penting:</strong> Parameter <code>reference_id</code> (Flip) atau <code>order_id</code> (Midtrans) WAJIB diawali dengan <strong>Routing Code</strong> aplikasi yang terdaftar (contoh: <code>SHOP-123</code> jika routing code adalah <code>SHOP</code>). Jika tidak, gateway tidak akan tahu kemana data harus diteruskan.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -85,6 +132,13 @@
                     <div class="input-group">
                         <label>App Name</label>
                         <input type="text" v-model="formData.AppName" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Environment</label>
+                        <select v-model="formData.Environment" required style="width: 100%; padding: 12px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: white; outline: none; transition: border-color 0.3s; margin-top: 8px;">
+                            <option value="production">Production</option>
+                            <option value="sandbox">Sandbox</option>
+                        </select>
                     </div>
                     <div class="input-group">
                         <label>Routing Code</label>

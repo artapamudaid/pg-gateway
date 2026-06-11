@@ -17,7 +17,8 @@ func SetupRoutes(app *fiber.App) {
 	// =========================================
 	// PUBLIC ROUTE (Hanya diakses oleh server Payment Gateway)
 	// =========================================
-	app.Post("/:provider/callback", handlers.HandleCallback)
+	app.Post("/:provider/callback", handlers.HandleCallback) // Defaults to production
+	app.Post("/:env/:provider/callback", handlers.HandleCallback) // e.g. /sandbox/flip/callback
 
 	// =========================================
 	// API ROUTES (Diakses oleh Frontend Dashboard)

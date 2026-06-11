@@ -23,8 +23,8 @@ func (s *DestinationService) GetByID(id string) (models.Destination, error) {
 	return s.destRepo.FindByID(id)
 }
 
-func (s *DestinationService) GetByRoutingCode(routingCode string) (models.Destination, error) {
-	return s.destRepo.FindByRoutingCode(routingCode)
+func (s *DestinationService) GetByRoutingCodeAndEnv(routingCode, env string) (models.Destination, error) {
+	return s.destRepo.FindByRoutingCodeAndEnv(routingCode, env)
 }
 
 func (s *DestinationService) Create(dest *models.Destination) error {
@@ -39,6 +39,7 @@ func (s *DestinationService) Update(id string, inputData *models.Destination) (m
 
 	// Update fields
 	dest.AppName = inputData.AppName
+	dest.Environment = inputData.Environment
 	dest.RoutingCode = inputData.RoutingCode
 	dest.TargetURL = inputData.TargetURL
 	dest.SecretToken = inputData.SecretToken

@@ -8,6 +8,7 @@ Payment Gateway Smart Gateway adalah gateway HTTP berkinerja tinggi yang diranca
 - **Worker Pool & Job Queue**: Menggunakan Go Channel secara bawaan untuk menampung lonjakan traffic callback mendadak tanpa menyebabkan _Out of Memory_ (OOM).
 - **Auto-Retry Mechanism**: Secara otomatis mengulang (retry) pengiriman data ke URL Tujuan (Target URL) dengan pola _exponential backoff_ jika server target sedang mati.
 - **Database Connection Pooling**: Mencegah putusnya koneksi database (PostgreSQL) saat server menerima ribuan hit mendadak.
+- **Dukungan Multi-Environment**: Pemisahan secara native untuk data dan target URL _Sandbox_ dan _Production_.
 - **Docker-Ready**: Dilengkapi dengan arsitektur _Multi-stage Build_ Dockerfile (berbasis Alpine) yang menghasilkan file binary statis berukuran sangat kecil (~20MB).
 
 ## Tech Stack
@@ -52,29 +53,42 @@ go run cmd/main.go
 Untuk menjalankan aplikasi ini menggunakan container Docker yang terisolasi dan sudah siap untuk environment production:
 
 ```bash
-# Build Docker image
+### 1. Build Docker image
 docker build -t payment-gateway:latest .
 
-# Run Docker container (dengan host network agar bisa terhubung ke database local, baca variabel dari .env)
+### 2. Hapus container lama (jika ada) secara paksa
+docker rm -f payment-gateway-app
+
+### 3. Jalankan container baru menggunakan image hasil build terbaru
 docker run -d --name payment-gateway-app --env-file .env --network="host" payment-gateway:latest
 ```
 
 ### 4. Cara Uji Coba (Hit Callback)
 
 Sebelum mencoba *hit* callback, pastikan Anda telah membuat **Destination** (tujuan *routing*) melalui Dashboard Frontend di `http://127.0.0.1:3131` atau via API. Anda membutuhkan:
+- **Environment** (misal: `sandbox` atau `production`)
 - **Routing Code** (misal: `SHOP`)
 - **Target URL** (misal: `https://webhook.site/xxxx`)
 - **Provider Token** (misal: `token_rahasia_anda`)
 
 Berikut adalah contoh untuk mengirim simulasi callback (jangan lupa sesuaikan alamat jika menggunakan *ngrok*).
 
-**Untuk Flip (`/flip/callback`)**
+**Untuk Flip (Production: `/flip/callback` | Sandbox: `/sandbox/flip/callback`)**
 Endpoint ini menerima data dalam format `application/x-www-form-urlencoded`. Parameternya adalah `token` dan `data` (berisi JSON dengan `reference_id` yang diawali Routing Code).
 
+Contoh untuk **Production**:
 ```bash
 curl -X POST http://127.0.0.1:3131/flip/callback \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "token=token_rahasia_anda" \
+  -d 'data={"reference_id": "SHOP-INV-001", "status": "SUCCESS", "amount": 50000}'
+```
+
+Contoh untuk **Sandbox**:
+```bash
+curl -X POST http://127.0.0.1:3131/sandbox/flip/callback \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "token=token_rahasia_sandbox" \
   -d 'data={"reference_id": "SHOP-INV-001", "status": "SUCCESS", "amount": 50000}'
 ```
 

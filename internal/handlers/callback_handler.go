@@ -14,6 +14,10 @@ import (
 
 func HandleCallback(c *fiber.Ctx) error {
 	provider := c.Params("provider")
+	env := c.Params("env")
+	if env == "" {
+		env = "production"
+	}
 
 	var refID string
 	var payload []byte
@@ -87,7 +91,7 @@ func HandleCallback(c *fiber.Ctx) error {
 
 	if len(parts) >= 2 {
 		routingCode := parts[0]
-		dest, err = destService.GetByRoutingCode(routingCode)
+		dest, err = destService.GetByRoutingCodeAndEnv(routingCode, env)
 		if err != nil {
 			return c.Status(fiber.StatusNotFound).SendString("Destination not found for routing code")
 		}
@@ -102,7 +106,7 @@ func HandleCallback(c *fiber.Ctx) error {
 		matched := false
 		if fallbackTitle != "" {
 			for _, d := range dests {
-				if strings.Contains(strings.ToLower(fallbackTitle), strings.ToLower(d.AppName)) {
+				if d.Environment == env && strings.Contains(strings.ToLower(fallbackTitle), strings.ToLower(d.AppName)) {
 					dest = d
 					matched = true
 					break
@@ -111,7 +115,17 @@ func HandleCallback(c *fiber.Ctx) error {
 		}
 
 		if !matched {
-			dest = dests[0]
+			// Find the first default for the env
+			for _, d := range dests {
+				if d.Environment == env {
+					dest = d
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				dest = dests[0]
+			}
 		}
 	}
 

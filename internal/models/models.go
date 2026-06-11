@@ -13,8 +13,9 @@ type Admin struct {
 
 type Destination struct {
 	gorm.Model
-	AppName     string `gorm:"size:100;not null"`
-	RoutingCode string `gorm:"size:50;uniqueIndex;not null"` // Contoh: APP1, SHOP
+	AppName       string `gorm:"size:100;not null"`
+	Environment   string `gorm:"size:20;uniqueIndex:idx_routing_env;not null;default:'production'"` // sandbox / production
+	RoutingCode   string `gorm:"size:50;uniqueIndex:idx_routing_env;not null"` // Contoh: APP1, SHOP
 	TargetURL     string `gorm:"not null"`                     // URL sistem tujuan
 	SecretToken   string `gorm:"not null"`                     // Handshake token (X-Gateway-Auth)
 	ProviderToken string `gorm:"not null;default:''"`          // Token dari Flip/Midtrans untuk verifikasi webhook masuk
@@ -22,6 +23,7 @@ type Destination struct {
 
 type CallbackLog struct {
 	gorm.Model
+	Environment string
 	ReferenceID string
 	RoutingCode string
 	TargetURL   string
@@ -49,6 +51,7 @@ func SeedDestination(db *gorm.DB) {
 	if count == 0 {
 		db.Create(&Destination{
 			AppName:       "Demo App",
+			Environment:   "production",
 			RoutingCode:   "DEMO",
 			TargetURL:     "https://webhook.site/demo-destination",
 			SecretToken:   "demo-secret",

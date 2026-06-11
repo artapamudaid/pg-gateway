@@ -23,9 +23,9 @@ func (r *DestinationRepository) FindByID(id string) (models.Destination, error) 
 	return dest, err
 }
 
-func (r *DestinationRepository) FindByRoutingCode(routingCode string) (models.Destination, error) {
+func (r *DestinationRepository) FindByRoutingCodeAndEnv(routingCode, env string) (models.Destination, error) {
 	var dest models.Destination
-	err := config.DB.Where("routing_code = ?", routingCode).First(&dest).Error
+	err := config.DB.Where("routing_code = ? AND environment = ?", routingCode, env).First(&dest).Error
 	return dest, err
 }
 

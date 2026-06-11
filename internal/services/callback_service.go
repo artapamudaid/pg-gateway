@@ -16,6 +16,7 @@ import (
 
 // CallbackJob mendefinisikan struktur data untuk antrean worker
 type CallbackJob struct {
+	Environment string
 	ReferenceID string
 	Payload     []byte
 }
@@ -39,11 +40,11 @@ func StartWorkerPool(numWorkers int) {
 // worker adalah goroutine yang senantiasa menunggu job baru dari JobQueue
 func worker(id int) {
 	for job := range JobQueue {
-		ProcessCallback(job.ReferenceID, job.Payload)
+		ProcessCallback(job.Environment, job.ReferenceID, job.Payload)
 	}
 }
 
-func ProcessCallback(referenceID string, rawPayload []byte) {
+func ProcessCallback(env string, referenceID string, rawPayload []byte) {
 	// Ekstrak Routing Code (Misal: "SHOP-INV-001" -> "SHOP")
 	parts := strings.SplitN(referenceID, "-", 2)
 	if len(parts) < 2 {
@@ -54,9 +55,9 @@ func ProcessCallback(referenceID string, rawPayload []byte) {
 
 	// Cari konfigurasi tujuan menggunakan Service
 	destService := NewDestinationService()
-	dest, err := destService.GetByRoutingCode(routingCode)
+	dest, err := destService.GetByRoutingCodeAndEnv(routingCode, env)
 	if err != nil {
-		log.Printf("Tujuan untuk routing code '%s' tidak ditemukan\n", routingCode)
+		log.Printf("Tujuan untuk routing code '%s' di env '%s' tidak ditemukan\n", routingCode, env)
 		return
 	}
 
@@ -111,6 +112,7 @@ func forwardRequest(refID string, dest models.Destination, payload []byte) {
 
 	// Simpan Log Audit
 	logEntry := models.CallbackLog{
+		Environment: dest.Environment,
 		ReferenceID: refID,
 		RoutingCode: dest.RoutingCode,
 		TargetURL:   dest.TargetURL,
@@ -146,6 +148,7 @@ func ForwardSync(refID string, dest models.Destination, payload []byte) (int, []
 
 	// Simpan Log Audit
 	logEntry := models.CallbackLog{
+		Environment: dest.Environment,
 		ReferenceID: refID,
 		RoutingCode: dest.RoutingCode,
 		TargetURL:   dest.TargetURL,
