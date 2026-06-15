@@ -30,6 +30,8 @@ func HandleCallback(c *fiber.Ctx) error {
 		tokenRaw = c.FormValue("token")
 		dataRaw := c.FormValue("data")
 
+		fmt.Printf("\n=== INCOMING FLIP PAYLOAD [%s] ===\nToken: %s\nData: %s\n=================================\n", env, tokenRaw, dataRaw)
+
 		// Parsing JSON internal (data)
 		var dataObj map[string]interface{}
 		if err := json.Unmarshal([]byte(dataRaw), &dataObj); err != nil {
@@ -105,12 +107,20 @@ func HandleCallback(c *fiber.Ctx) error {
 
 		matched := false
 		if fallbackTitle != "" {
+			cleanFallback := strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(fallbackTitle), " ", ""), "-", "")
+			fmt.Printf("DEBUG: Mencoba mencocokkan judul fallback: '%s'\n", cleanFallback)
 			for _, d := range dests {
-				if d.Environment == env && strings.Contains(strings.ToLower(fallbackTitle), strings.ToLower(d.AppName)) {
+				cleanApp := strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(d.AppName), " ", ""), "-", "")
+				fmt.Printf("DEBUG: Memeriksa Destinasi dari DB - AppName: '%s' (clean: '%s'), Env: '%s'\n", d.AppName, cleanApp, d.Environment)
+				if d.Environment == env && strings.Contains(cleanFallback, cleanApp) {
 					dest = d
 					matched = true
+					fmt.Printf("DEBUG: COCOK! Destinasi diset ke: %s\n", d.AppName)
 					break
 				}
+			}
+			if !matched {
+				fmt.Printf("DEBUG: GAGAL COCOK DENGAN SEMUA DESTINASI DI DB. Menggunakan fallback ke urutan 1.\n")
 			}
 		}
 
@@ -137,7 +147,8 @@ func HandleCallback(c *fiber.Ctx) error {
 	// Meneruskan request secara sinkron ke aplikasi tujuan
 	statusCode, bodyBytes, err := services.ForwardSync(refID, dest, payload)
 	if err != nil {
-		return c.Status(fiber.StatusBadGateway).SendString("Gateway Error: Failed to reach destination")
+		fmt.Printf("Gateway Error to %s: %v\n", dest.TargetURL, err)
+		return c.Status(fiber.StatusBadGateway).SendString(fmt.Sprintf("Gateway Error: Failed to reach destination. Details: %v", err))
 	}
 
 	// Meneruskan respons (status code dan JSON) dari aplikasi tujuan kembali ke Flip
