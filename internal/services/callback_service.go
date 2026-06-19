@@ -86,7 +86,7 @@ func forwardRequest(refID string, dest models.Destination, payload []byte) {
 				return err // Jaringan bermasalah/RTO -> akan di retry otomatis
 			}
 			defer resp.Body.Close()
-			
+
 			statusCode = resp.StatusCode
 
 			// Jika target membalas dengan status 50x (Server Error), anggap gagal dan minta retry
@@ -96,8 +96,8 @@ func forwardRequest(refID string, dest models.Destination, payload []byte) {
 
 			return nil // Berhasil
 		},
-		retry.Attempts(5), // Maksimal coba 5 kali
-		retry.Delay(2*time.Second), // Jeda awal 2 detik sebelum retry pertama
+		retry.Attempts(5),              // Maksimal coba 5 kali
+		retry.Delay(2*time.Second),     // Jeda awal 2 detik sebelum retry pertama
 		retry.MaxDelay(30*time.Second), // Maksimal jeda 30 detik
 		retry.OnRetry(func(n uint, err error) {
 			log.Printf("Retry %d ke %s karena error: %v\n", n+1, dest.TargetURL, err)
@@ -160,4 +160,3 @@ func ForwardSync(refID string, dest models.Destination, payload []byte) (int, []
 
 	return resp.StatusCode, bodyBytes, nil
 }
-

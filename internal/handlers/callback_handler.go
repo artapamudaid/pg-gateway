@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-
 	"payment-gateway/internal/models"
 	"payment-gateway/internal/services"
 
@@ -61,18 +60,18 @@ func HandleCallback(c *fiber.Ctx) error {
 		if !ok || refID == "" {
 			return c.Status(fiber.StatusBadRequest).SendString("Routing identifier (reference_id/bill_link_id/id) is required")
 		}
-		
+
 		payload = c.Body()
 
 	case "midtrans":
 		// Contoh untuk midtrans, token biasanya di header (misal: Authorization)
 		tokenRaw = c.Get("Authorization")
-		
+
 		var dataObj map[string]interface{}
 		if err := json.Unmarshal(c.Body(), &dataObj); err != nil {
 			return c.Status(fiber.StatusBadRequest).SendString("Invalid JSON Payload")
 		}
-		
+
 		var ok bool
 		refID, ok = dataObj["order_id"].(string)
 		if !ok || refID == "" {
@@ -86,7 +85,7 @@ func HandleCallback(c *fiber.Ctx) error {
 
 	// Ekstrak Routing Code (Misal: "SHOP-INV-001" -> "SHOP")
 	parts := strings.SplitN(refID, "-", 2)
-	
+
 	destService := services.NewDestinationService()
 	var dest models.Destination
 	var err error
